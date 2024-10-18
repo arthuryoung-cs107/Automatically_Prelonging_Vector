@@ -25,29 +25,80 @@ struct apv_threads
 #endif
 };
 
-struct apv_ichunk
+struct apv_chunk
 {
-    apv_ichunk(bool owner_, size_t size_, int *chunk_): owner(owner_), size(size_), chunk(chunk_) {}
-    apv_ichunk(size_t size_): apv_ichunk(true,size_,new int[size_]) {}
-    apv_ichunk(size_t size_,int *chunk_): apv_ichunk(false,size_,chunk_) {}
+  apv_chunk(const bool owner_,size_t size_): owner(owner_), size(size_) {}
+  ~apv_chunk() {}
+
+  const bool owner;
+  const size_t size;
+
+};
+  struct apv_ichunk : public apv_chunk
+  {
+    apv_ichunk(bool owner_, size_t size_, int *chunk_): apv_chunk(owner_,size_), chunk(chunk_) {}
+
+      apv_ichunk(size_t size_): apv_ichunk(true,size_,new int[size_]) {}
+      apv_ichunk(size_t size_,int *chunk_): apv_ichunk(false,size_,chunk_) {}
+
     ~apv_ichunk() {if (owner) delete [] chunk;}
 
-    const bool owner;
-    const size_t size;
     int * const chunk;
-};
+  };
+  struct apv_dchunk : public apv_chunk
+  {
+    apv_dchunk(bool owner_, size_t size_, double *chunk_): apv_chunk(owner_,size_), chunk(chunk_) {}
 
-struct apv_dchunk
-{
-    apv_dchunk(bool owner_, size_t size_, double *chunk_): owner(owner_), size(size_), chunk(chunk_) {}
-    apv_dchunk(size_t size_): apv_dchunk(true,size_,new double[size_]) {}
-    apv_dchunk(size_t size_,double *chunk_): apv_dchunk(false,size_,chunk_) {}
+      apv_dchunk(size_t size_): apv_dchunk(true,size_,new double[size_]) {}
+      apv_dchunk(size_t size_,double *chunk_): apv_dchunk(false,size_,chunk_) {}
+
     ~apv_dchunk() {if (owner) delete [] chunk;}
 
-    const bool owner;
-    const size_t size;
     double * const chunk;
+  };
+
+
+struct apv_matrix
+{
+  apv_matrix(bool chunk_owner_, size_t rows_, size_t cols_):
+    chunk_owner(chunk_owner_), rows(rows_), cols(cols_) {}
+  ~apv_matrix() {}
+
+  const bool chunk_owner;
+  const size_t  rows,
+                cols;
 };
+  struct apv_imatrix : public apv_matrix
+  {
+
+    apv_imatrix(bool chunk_owner_, size_t rows_, size_t cols_, apv_ichunk * const ichunk_):
+      apv_matrix(chunk_owner_,rows_,cols_), ichunk(ichunk_) {}
+
+      apv_imatrix(size_t rows_, size_t cols_): apv_imatrix(true,rows_,cols_,new apv_ichunk(rows_*cols_)) {}
+      apv_imatrix(size_t rows_, size_t cols_,apv_ichunk *ichunk_):
+        apv_imatrix(false,(ichunk_->size)/cols_,(ichunk_->size)/rows_,ichunk_) {}
+
+    ~apv_imatrix() {if (chunk_owner) delete ichunk;}
+
+    apv_ichunk * const ichunk;
+
+  };
+  struct apv_dmatrix : public apv_matrix
+  {
+
+    apv_dmatrix(bool chunk_owner_, size_t rows_, size_t cols_, apv_dchunk * const dchunk_):
+      apv_matrix(chunk_owner_,rows_,cols_), dchunk(dchunk_) {}
+
+      apv_dmatrix(size_t rows_, size_t cols_): apv_dmatrix(true,rows_,cols_,new apv_dchunk(rows_*cols_)) {}
+      apv_dmatrix(size_t rows_, size_t cols_,apv_dchunk *dchunk_):
+        apv_dmatrix(false,(dchunk_->size)/cols_,(dchunk_->size)/rows_,dchunk_) {}
+
+    ~apv_dmatrix() {if (chunk_owner) delete dchunk;}
+
+    apv_dchunk * const dchunk;
+
+  };
+
 
 template <typename T> T ** Tmatrix(int M_, int N_)
 {

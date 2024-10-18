@@ -27,7 +27,7 @@ struct ode_solspc_element
             &nvar = meta.nvar;
 };
 
-class ode_solution: public ode_solspc_element
+struct ode_solution: public ode_solspc_element
 {
   ode_solution(ode_solspc_meta &meta_, double *pts_): ode_solspc_element(meta_), pts(pts_) {}
   ~ode_solution() {}
@@ -39,6 +39,17 @@ class ode_solution: public ode_solspc_element
           * const dnxu = u + ndep*eor;
 
   void print_sol();
+};
+
+struct ode_system: public ode_solspc_meta
+{
+  ode_system(int eor_, int ndep_): ode_solspc_meta(eor_,ndep_) {}
+  ~ode_system() {}
+
+  virtual void dudx_eval(double x_, double *u_, double *dudx_) = 0;
+  virtual void JacF_eval(double x_, double *u_, double **dls_out_) = 0;
+  virtual void dnp1xu_eval(double x_, double *u_, double *dnp1xu_) = 0;
+
 };
 
 
